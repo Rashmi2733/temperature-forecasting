@@ -1,31 +1,28 @@
 import numpy as np
 import pandas as pd 
 import matplotlib.pyplot as plt
-import streamlit as st
 from pmdarima import auto_arima
-
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+import plotly.graph_objects as go
 import warnings
 warnings.filterwarnings("ignore")
 
 
-
+#Creating a fucntion to forecast the exo variables based on the user input
 def ind_var_forecast(df, selected_country, var, forecasting_length):
     mod_df = df[['Year',f'{selected_country}_{var}']].set_index('Year')
 
-    # Fit auto_arima function to AirPassengers dataset
+    # Fitting an auto_arima function to to get the best values for p, q, d
     stepwise_fit = auto_arima(mod_df[f'{selected_country}_{var}'], start_p = 1, start_q = 1,
                             max_p = 3, max_q = 3, m = 12,
                             start_P = 0, seasonal = True,
                             d = None, D = 1, trace = True,
-                            error_action ='ignore',   # we don't want to know if an order does not work
-                            suppress_warnings = True,  # we don't want convergence warnings
-                            stepwise = True)           # set to stepwise
+                            error_action ='ignore',  
+                            suppress_warnings = True,  
+                            stepwise = True)           
 
-    # To print the summary
     best_order = stepwise_fit.order
     best_s_order = stepwise_fit.seasonal_order
-
-    # print(best_order, best_s_order)
 
     # Split data into train / test sets
     train = mod_df.iloc[:len(mod_df)-10]
@@ -34,7 +31,7 @@ def ind_var_forecast(df, selected_country, var, forecasting_length):
 
 
     # Fit a SARIMAX(0, 1, 1)x(2, 1, 1, 12) on the training set
-    from statsmodels.tsa.statespace.sarimax import SARIMAX
+    
 
     model = SARIMAX(train[f'{selected_country}_{var}'], 
                     order = best_order, 
@@ -67,8 +64,42 @@ def ind_var_forecast(df, selected_country, var, forecasting_length):
                             end = (len(mod_df)-1) + forecasting_length, 
                             typ = 'levels').rename('Forecast')
 
-    # Plot the forecast values
-    # mod_df[f'{selected_country}_{var}'].plot(figsize = (12, 5), legend = True)
-    # forecast.plot(legend = True)
 
-    return forecast 
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=mod_df.index,
+        y=mod_df[f'{selected_country}_{var}'],
+        mode='lines+markers',
+        name='Historical',
+        line=dict(color='blue'),
+        marker=dict(size=6)
+    ))
+
+    future_index = pd.date_range(start=mod_df.index[-1] + pd.DateOffset(years=1), periods=forecasting_length, freq='Y')
+    fig.add_trace(go.Scatter(
+        x=future_index,
+        y=forecast,
+        mode='lines+markers',
+        name='Forecast',
+        line=dict(color='orange', dash='dash'),
+        marker=dict(size=6)
+    ))
+    fig.update_layout(
+        title=f"Forecast for {var.upper()}",
+        xaxis_title='Year',
+        yaxis_title=var.upper(),
+        height=350,
+        margin=dict(l=30, r=30, t=40, b=30),
+        legend=dict(font=dict(size=10)),
+        
+        xaxis=dict(
+            title_font=dict(size=17, color='black', family='Calibri', weight='bold'),
+            tickfont=dict(size=15, color='black', family='Calibri')
+        ),
+        yaxis=dict(
+            title_font=dict(size=17, color='black', family='Calibri', weight='bold'),
+            tickfont=dict(size=15, color='black', family='Calibri')
+        )
+    )
+
+    return forecast, fig 
