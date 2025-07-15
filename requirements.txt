@@ -2,7 +2,7 @@ joblib
 scikit-learn
 numpy
 pandas
-matplotlib.pyplot
+# matplotlib.pyplot
 streamlit
 python-dotenv
 seaborn
