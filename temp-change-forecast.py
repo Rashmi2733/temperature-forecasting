@@ -1,7 +1,6 @@
 #Importing all the necessary libraries
 import numpy as np
 import pandas as pd 
-# import matplotlib.pyplot as plt
 import streamlit as st
 from pmdarima import auto_arima
 from statsmodels.tsa.statespace.sarimax import SARIMAX
