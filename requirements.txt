@@ -1,0 +1,11 @@
+joblib
+scikit-learn
+numpy
+pandas
+streamlit
+python-dotenv
+seaborn
+statsmodels
+pmdarima
+warnings
+matplotlib
