@@ -1,10 +1,12 @@
+--constraint constraints.txt
+
 numpy
+Cython
 pandas
 matplotlib
-Cython
 streamlit
 python-dotenv
 seaborn
-pmdarima
 statsmodels
 plotly
+pmdarima
