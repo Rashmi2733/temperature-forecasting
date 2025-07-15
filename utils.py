@@ -70,9 +70,10 @@ def ind_var_forecast(df, selected_country, var, forecasting_length):
         x=mod_df.index,
         y=mod_df[f'{selected_country}_{var}'],
         mode='lines+markers',
-        name='Historical',
+        name='Actual',
         line=dict(color='blue'),
-        marker=dict(size=6)
+        marker=dict(size=6),
+        hovertemplate='<b>Year: %{x|%Y}<br>Actual: %{y:.2f}<extra></extra></b>' #Text to be shown while hovering over line
     ))
 
     future_index = pd.date_range(start=mod_df.index[-1] + pd.DateOffset(years=1), periods=forecasting_length, freq='Y')
@@ -81,9 +82,22 @@ def ind_var_forecast(df, selected_country, var, forecasting_length):
         y=forecast,
         mode='lines+markers',
         name='Forecast',
-        line=dict(color='orange', dash='dash'),
-        marker=dict(size=6)
+        line=dict(color='green', dash='dash'),
+        marker=dict(size=6),
+        hovertemplate='<b>Year: %{x|%Y}<br>Forecast: %{y:.2f}<extra></extra></b>' #Text to be shown while hovering over line
     ))
+
+    fig.add_trace(go.Scatter(
+        x=predictions.index,
+        y=predictions,
+        mode='lines+markers',
+        name='Test Prediction',
+        line=dict(color='red'),
+        marker=dict(size=6),
+        hovertemplate='<b>Year: %{x|%Y}<br>Test Predicted: %{y:.2f}<extra></extra></b>' #Text to be shown while hovering over line
+    ))
+
+
     fig.update_layout(
         title=f"Forecast for {var.upper()}",
         xaxis_title='Year',
