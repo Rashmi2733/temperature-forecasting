@@ -1,4 +1,5 @@
 #Importing all the necessary libraries
+import os
 import numpy as np
 import pandas as pd 
 import streamlit as st
@@ -15,7 +16,7 @@ from utils import ind_var_forecast
 st.set_page_config(layout="wide")
 
 #Getting the country df to be used for user input and forecasting 
-countries_df = pd.read_csv(r'country_list.csv')
+countries_df = pd.read_csv(os.path.join(os.path.dirname(__file__), 'country_list.csv'))
 
 #Getting the list of countries from the dataframe
 countries = sorted(list(set(countries_df['Country Name'].to_list())))
@@ -24,7 +25,7 @@ countries = sorted(list(set(countries_df['Country Name'].to_list())))
 selected_country = st.sidebar.selectbox('Select a country:', countries)
 
 #Getting the required dataset with data from all countries 
-df = pd.read_csv('combined_df.csv')
+df = pd.read_csv(os.path.join(os.path.dirname(__file__), 'combined_df.csv'))
 
 #Getting only the data for the selected country and adding the year column
 df_selected_0 = df.filter(like=selected_country, axis = 1)
