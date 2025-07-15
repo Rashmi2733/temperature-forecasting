@@ -1,5 +1,6 @@
 numpy
 pandas
+Cython
 streamlit
 python-dotenv
 seaborn
