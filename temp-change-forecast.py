@@ -45,14 +45,14 @@ selected_df = df_selected.set_index('Year')
 # print(selected_df.columns)
 
 #Getting all required columns except the year 
-selected_cols_no_yr = [f'{selected_country}_co2',f'{selected_country}_meth', f'{selected_country}_nox',f'{selected_country}_pop', f'{selected_country}_temp', f'{selected_country}_land_temp']
+selected_cols_no_yr = [f'{selected_country}_co2',f'{selected_country}_meth', f'{selected_country}_nox',f'{selected_country}_pop', f'{selected_country}_temp']
 
 #print(selected_cols_no_yr)
 
 #Getting the final dataframe for forecasting
 selected_df_new = selected_df[selected_cols_no_yr]
 selected_df_new[selected_cols_no_yr] = selected_df_new[selected_cols_no_yr].astype(float)
-selected_final = selected_df_new[[f'{selected_country}_co2',f'{selected_country}_meth', f'{selected_country}_nox', f'{selected_country}_temp', f'{selected_country}_land_temp']][30:61]
+selected_final = selected_df_new[[f'{selected_country}_co2',f'{selected_country}_meth', f'{selected_country}_nox', f'{selected_country}_temp']][30:61]
 
 
 selected_final1 = selected_final.reset_index()
@@ -73,6 +73,7 @@ selected_external_vars = st.sidebar.multiselect(
 
 #Letting the users choose the numbers of years to forecast
 future_values = st.sidebar.slider("Select the number of years to forecast:", max_value=24, min_value=2)
+
 
 #Once the submit button is pressed
 if st.sidebar.button("Submit"):
@@ -112,8 +113,25 @@ if st.sidebar.button("Submit"):
         best_order = model_testing.order
         best_s_order = model_testing.seasonal_order
 
+        # Splitting the temperature data into train and test sets
+        train = temp_initial.iloc[:len(temp_initial)-10]
+        test = temp_initial.iloc[len(temp_initial)-10:]
 
-        #Creating the best SARIMAX model using the best values ofr p,d,q (no exo variables used since the user did not choose any)
+        #Using the train data to train a model to check how good the model is
+        model_training = SARIMAX(train, 
+                    order = best_order, 
+                    seasonal_order =best_s_order)
+
+        train_result = model_training.fit()
+        # print(train_result.summary())
+
+        #Getting predictions for the text dataset
+        start = len(train)
+        end = len(train) + len(test) - 1
+        predictions = train_result.predict(start, end).rename("Predictions")
+        
+
+        #Creating the best SARIMAX model using the best values of p,d,q (no exo variables used since the user did not choose any)
         model = SARIMAX(
             temp_initial,                  
             order=best_order,
@@ -128,7 +146,8 @@ if st.sidebar.button("Submit"):
         
 
     #IF external variables are selected, we need to first get forecast for those and then use them for our temp change forecast
-    else: 
+    else:
+
         # Preparing initial exo variables and future exo variables using the function ind_var_forecast defined in util.py
         initial_exo_cols = [f'{selected_country}_{var}' for var in selected_exogs]
         initial_exo = selected_final1[initial_exo_cols + ['Year']].set_index('Year')
@@ -137,12 +156,14 @@ if st.sidebar.button("Submit"):
 
         exo_figs = []
 
+        #Mapping dictionary for variable with actual values
         exo_title_map = {
             'co2': 'CO₂ emissions (metric tons per capita)',
             'meth': 'Methane emissions (metric tons of CO₂ equivalent per capita)',
             'nox': 'Nitrous oxide emissions (metric tons of CO₂ equivalent per capita)'
         }
 
+        #Getting the forecasts for exo variables along with the graphs
         for var in selected_exogs:
             forecast_series, exo_fig = ind_var_forecast(selected_final1, selected_country, var, forecasting_length=future_values)
             future_exog[var] = forecast_series
@@ -160,9 +181,6 @@ if st.sidebar.button("Submit"):
                 )
             )
             exo_figs.append((title, exo_fig))
-
-
-        # future_exog = pd.DataFrame({var: ind_var_forecast(selected_final1, selected_country, var, forecasting_length=future_values) for var in selected_exogs})
 
         #Getting the initial temperature values 
         temp_initial = selected_final1[[f'{selected_country}_temp', 'Year']].set_index('Year')
@@ -186,10 +204,29 @@ if st.sidebar.button("Submit"):
         best_order = model_testing.order
         best_s_order = model_testing.seasonal_order
 
-        # print(best_order, best_s_order)
+        #Splitting the data into train and test sets to check the model 
+        train = temp_initial.iloc[:len(temp_initial)-10]
+        test = temp_initial.iloc[len(temp_initial)-10:]
 
+        train_exo = initial_exo.iloc[:len(initial_exo)-10]
+        test_exo = initial_exo.iloc[len(initial_exo)-10:]
+
+        #Training model using train data and train exo data
+        model_training = SARIMAX(train, 
+                    exogenous=train_exo, 
+                    order = best_order, 
+                    seasonal_order =best_s_order)
+
+        train_result = model_training.fit()
+        # print(train_result.summary())
+
+        #Getting predictions for the text dataset
+        start = len(train)
+        end = len(train) + len(test) - 1
+        predictions = train_result.predict(start, end, exog=test_exo).rename("Predictions")
+
+    
         #Creating the best SARIMAX model using the best values of p,d,q (exo variables used)
-
         model = SARIMAX(
             temp_initial,                
             exog=initial_exo, 
@@ -227,7 +264,6 @@ if st.sidebar.button("Submit"):
     ))
 
 
-
     # Forecasted temperature change plotting
     fig.add_trace(go.Scatter(
         x=forecast_final.index,
@@ -239,7 +275,18 @@ if st.sidebar.button("Submit"):
         hovertemplate='<b>Forecast Year: %{x|%Y}<br>Predicted Temperature: %{y:.2f} °C<extra></extra></b>'
     ))
 
-    #Overall layout of the graph
+    #Predictions for test data plotting
+    fig.add_trace(go.Scatter(
+        x=predictions.index,
+        y=predictions,
+        mode='lines+markers',
+        name='Test Prediction',
+        line=dict(color='red'),
+        marker=dict(size=6),
+        hovertemplate='<b>Year: %{x|%Y}<br>Test Predicted: %{y:.2f}<extra></extra></b>' #Text to be shown while hovering over line
+    ))
+
+    #Formatting the overall layout of the graph
     fig.update_layout(
         # title="Temperature change forecast", #Removed since the streamlit title is enough 
         xaxis_title="Year",
@@ -291,14 +338,12 @@ if st.sidebar.button("Submit"):
         for i, j in enumerate(selected_external_vars):
             st.markdown(f'**{i+1}. {j}**')
 
+        #Plotting the graphs and forecasts for the exo variables
         st.subheader("Forecasts for Selected External Variables", divider='grey')
 
         for title, fig in exo_figs:
             st.plotly_chart(fig, use_container_width=True)
 
-
-
-###predicting forecast using test and train for included exo and not and checking error and showing both graphs 
 
 
 
