@@ -1,9 +1,10 @@
 numpy
 pandas
+matplotlib
 Cython
 streamlit
 python-dotenv
 seaborn
-statsmodels
 pmdarima
+statsmodels
 plotly
