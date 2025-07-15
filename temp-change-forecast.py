@@ -6,7 +6,7 @@ from pmdarima import auto_arima
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 import warnings
 import plotly.graph_objects as go
-warnings.filterwarnings("ignore")
+# warnings.filterwarnings("ignore")
 
 #Getting the function from utils.py
 from utils import ind_var_forecast
