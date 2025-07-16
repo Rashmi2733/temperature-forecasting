@@ -24,48 +24,42 @@ def ind_var_forecast(df, selected_country, var, forecasting_length):
     best_order = stepwise_fit.order
     best_s_order = stepwise_fit.seasonal_order
 
-    # Split data into train / test sets
+    #Splitting the data into train and test sets to check the model 
     train = mod_df.iloc[:len(mod_df)-10]
-    test = mod_df.iloc[len(mod_df)-10:] # set one year(12 months) for testing
+    test = mod_df.iloc[len(mod_df)-10:] 
 
-
-
-    # Fit a SARIMAX(0, 1, 1)x(2, 1, 1, 12) on the training set
-    
-
-    model = SARIMAX(train[f'{selected_country}_{var}'], 
+    #Training model using train data and train exo data
+    train_model = SARIMAX(train[f'{selected_country}_{var}'], 
                     order = best_order, 
                     seasonal_order =best_s_order)
 
-    result = model.fit()
-    print(result.summary())
+    train_result = train_model.fit()
+    # print(train_result.summary())
 
-
+    #Getting predictions for the text dataset
     start = len(train)
     end = len(train) + len(test) - 1
+    predictions = train_result.predict(start, end).rename("Predictions")
 
-    # Predictions for one-year against the test set
-    predictions = result.predict(start, end,
-                                typ = 'levels').rename("Predictions")
-
-    # plot predictions and actual values
+    #PLotting predictions and actual values
     predictions.plot(legend = True)
     test[f'{selected_country}_{var}'].plot(legend = True)
     plt.show()
 
-    # Train the model on the full dataset
-    model = model = SARIMAX(mod_df[f'{selected_country}_{var}'], 
+    #Creating the best SARIMAX model using the best values of p,d,q
+    model =  SARIMAX(mod_df[f'{selected_country}_{var}'], 
                             order = best_order, 
                             seasonal_order =best_s_order)
     result = model.fit()
 
-    # Forecast for the next year
-    forecast = result.predict(start = len(mod_df), 
-                            end = (len(mod_df)-1) + forecasting_length, 
-                            typ = 'levels').rename('Forecast')
+    #Forecasting chosen variable based on the number of years given by user
+    forecast = result.get_forecast(steps=forecasting_length)
+    var_forecast = forecast.predicted_mean
 
-
+    #Getting graphs for each variable forecast
     fig = go.Figure()
+
+    # Actual variable plotting
     fig.add_trace(go.Scatter(
         x=mod_df.index,
         y=mod_df[f'{selected_country}_{var}'],
@@ -76,10 +70,11 @@ def ind_var_forecast(df, selected_country, var, forecasting_length):
         hovertemplate='<b>Year: %{x|%Y}<br>Actual: %{y:.2f}<extra></extra></b>' #Text to be shown while hovering over line
     ))
 
+    # Forecasted variable plotting
     future_index = pd.date_range(start=mod_df.index[-1] + pd.DateOffset(years=1), periods=forecasting_length, freq='Y')
     fig.add_trace(go.Scatter(
         x=future_index,
-        y=forecast,
+        y=var_forecast,
         mode='lines+markers',
         name='Forecast',
         line=dict(color='green', dash='dash'),
@@ -87,6 +82,7 @@ def ind_var_forecast(df, selected_country, var, forecasting_length):
         hovertemplate='<b>Year: %{x|%Y}<br>Forecast: %{y:.2f}<extra></extra></b>' #Text to be shown while hovering over line
     ))
 
+    #Predictions for test data plotting
     fig.add_trace(go.Scatter(
         x=predictions.index,
         y=predictions,
@@ -97,7 +93,7 @@ def ind_var_forecast(df, selected_country, var, forecasting_length):
         hovertemplate='<b>Year: %{x|%Y}<br>Test Predicted: %{y:.2f}<extra></extra></b>' #Text to be shown while hovering over line
     ))
 
-
+    #Formatting the overall layout of the graph
     fig.update_layout(
         title=f"Forecast for {var.upper()}",
         xaxis_title='Year',
@@ -116,4 +112,4 @@ def ind_var_forecast(df, selected_country, var, forecasting_length):
         )
     )
 
-    return forecast, fig 
+    return var_forecast, fig 
