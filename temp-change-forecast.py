@@ -296,11 +296,11 @@ if st.sidebar.button("Submit"):
         margin=dict(l=20, r=20, t=30, b=20),
         height=350,
     xaxis=dict(
-        title_font=dict(size=17, color='black', family='Calibri', weight='bold'),
+        title_font=dict(size=17, color='black', family='Calibri'),
         tickfont=dict(size=15, color='black', family='Calibri')
     ),
     yaxis=dict(
-        title_font=dict(size=17, color='black', family='Calibri', weight='bold'),
+        title_font=dict(size=17, color='black', family='Calibri'),
         tickfont=dict(size=15, color='black', family='Calibri')
     ),
     #Adding a dashed red line at the 0 temp value
