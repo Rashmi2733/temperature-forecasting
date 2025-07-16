@@ -1,2 +1,2 @@
-# temperature-forecasting
-Forecasting temperature using SARIMAX model and external variables like carbon dioxide, methane, nitrous oxide, and population.
+# Temperature Change Forecast
+Forecasting temperature change using SARIMAX model and external variables like carbon dioxide, methane, and nitrous oxide.
