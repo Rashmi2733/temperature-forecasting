@@ -107,11 +107,11 @@ def ind_var_forecast(df, selected_country, var, forecasting_length):
         legend=dict(font=dict(size=10)),
         
         xaxis=dict(
-            title_font=dict(size=17, color='black', family='Calibri', weight='bold'),
+            title_font=dict(size=17, color='black', family='Calibri'),
             tickfont=dict(size=15, color='black', family='Calibri')
         ),
         yaxis=dict(
-            title_font=dict(size=17, color='black', family='Calibri', weight='bold'),
+            title_font=dict(size=17, color='black', family='Calibri'),
             tickfont=dict(size=15, color='black', family='Calibri')
         )
     )
