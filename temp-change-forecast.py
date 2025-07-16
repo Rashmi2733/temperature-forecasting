@@ -175,7 +175,7 @@ if st.sidebar.button("Submit"):
                 yaxis=dict(
                     title=dict(
                         text=f'{y_axis}',
-                        font=dict(size=17, color='black', family='Calibri', **{'weight': 'bold'})
+                        font=dict(size=17, color='black', family='Calibri')
                     ),
                     tickfont=dict(size=15, color='black', family='Calibri')
                 )
